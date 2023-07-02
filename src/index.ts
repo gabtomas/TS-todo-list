@@ -1,49 +1,57 @@
-/**
- * This file is just a silly example to show everything working in the browser.
- * When you're ready to start on your site, clear the file. Happy hacking!
- **/
-
 import { v4 as uuidV4 } from 'uuid';
 
-const id = uuidV4();
-console.log(`Hello, ${id}!`);
+type Task = {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: Date;
+};
 
 const list = document.querySelector<HTMLUListElement>('#list');
-const form = document.querySelector('new-task-form') as HTMLFormElement | null;
+const form = document.getElementById('new-task-form') as HTMLFormElement | null;
 const input = document.querySelector<HTMLInputElement>('#new-task-title');
+const tasks: Task[] = loadTasks();
+tasks.forEach(addListItem);
 
-form?.addEventListener('submit', (event) => {
-  // prevent the default behavior of the form submit event
-  event.preventDefault();
+form?.addEventListener('submit', (e) => {
+  e.preventDefault();
 
-  //if input exists give me the value, if not return undefined
-  if (input?.value == '' || input?.value == null) {
-    return;
-  }
+  if (input?.value == '' || input?.value == null) return;
 
-  const task = {
+  const newTask: Task = {
     id: uuidV4(),
     title: input.value,
     completed: false,
     createdAt: new Date(),
   };
+  tasks.push(newTask);
+  saveTasks();
 
-  addListItem(task);
+  addListItem(newTask);
+  input.value = '';
 });
 
 function addListItem(task: Task) {
-  const listItem = document.createElement('li');
+  const item = document.createElement('li');
   const label = document.createElement('label');
   const checkbox = document.createElement('input');
+  checkbox.addEventListener('change', () => {
+    task.completed = checkbox.checked;
+    saveTasks();
+  });
   checkbox.type = 'checkbox';
+  checkbox.checked = task.completed;
   label.append(checkbox, task.title);
-  listItem.append(label);
-  list?.append(listItem);
+  item.append(label);
+  list?.append(item);
 }
 
-interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-  createdAt: Date;
+function saveTasks() {
+  localStorage.setItem('TASKS', JSON.stringify(tasks));
+}
+
+function loadTasks(): Task[] {
+  const taskJSON = localStorage.getItem('TASKS');
+  if (taskJSON == null) return [];
+  return JSON.parse(taskJSON);
 }
